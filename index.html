@@ -113,6 +113,11 @@
                     <p class="relative text-[9px] theme-text mt-1 text-center pointer-events-none glitch-text" data-val="СОЗДАТЬ ПЕРСОНАЖА">СОЗДАТЬ ПЕРСОНАЖА</p>
                 </div>
 
+                <div class="tech-panel p-4 font-mono-custom relative overflow-hidden group ui-element cursor-pointer hover:theme-bg-faint transition-all w-full" id="btn-open-storage">
+                    <button class="relative w-full theme-text py-2 text-sm font-bold tracking-widest uppercase pointer-events-none glitch-text flex justify-between"><span>[</span><span>ХРАНИЛИЩЕ</span><span>]</span></button>
+                    <p class="relative text-[9px] theme-text mt-1 text-center pointer-events-none">ЛОКАЛЬНЫЕ ЗАПИСИ</p>
+                </div>
+
                 <div class="tech-panel p-4 font-mono-custom w-full flex-1 overflow-hidden flex flex-col">
                     <h2 class="text-xs theme-text mb-4 border-b theme-border pb-1 uppercase shrink-0 glitch-text" data-val="Системные логи">Системные логи</h2>
                     <ul id="log-list" class="text-[10px] space-y-0.5 text-gray-500 overflow-y-auto custom-scrollbar flex-1"></ul>
@@ -180,6 +185,7 @@
                         <button class="dossier-tab-btn tab-inactive px-4 py-2 text-[10px] font-mono-custom tracking-widest uppercase shrink-0" data-char-tab="char-view-weaknesses">Слабости</button>
                         <button class="dossier-tab-btn tab-inactive px-4 py-2 text-[10px] font-mono-custom tracking-widest uppercase shrink-0" data-char-tab="char-view-inventory">Инвентарь</button>
                         <button class="dossier-tab-btn tab-inactive px-4 py-2 text-[10px] font-mono-custom tracking-widest uppercase shrink-0" data-char-tab="char-view-appearance">Внешность</button>
+                        <button class="dossier-tab-btn tab-inactive px-4 py-2 text-[10px] font-mono-custom tracking-widest uppercase shrink-0 text-[#5865f2] hover:text-[#4752c4]" data-char-tab="char-view-export">Discord ↗</button>
                     </div>
 
                     <div class="flex-1 overflow-y-auto custom-scrollbar p-6">
@@ -201,6 +207,29 @@
                         <div id="char-view-appearance" class="char-view-tab hidden">
                             <div id="char-modal-appearance" class="whitespace-pre-line text-gray-300 text-sm leading-relaxed pl-2 border-l theme-border mb-4"></div>
                             <div id="char-modal-appearance-gallery"></div>
+                        </div>
+                        <!-- ТАБЛИЦА DISCORD ЭКСПОРТА -->
+                        <div id="char-view-export" class="char-view-tab hidden flex flex-col gap-3">
+                            <div class="flex items-center justify-between pb-3 border-b border-gray-800 shrink-0">
+                                <span class="text-[10px] font-mono-custom text-gray-500 uppercase tracking-widest">Стилизованная анкета для Discord</span>
+                                <div class="flex gap-2">
+                                    <button id="btn-view-discord-preview" class="dc-copy-btn" style="font-size:11px;padding:5px 12px;">👁 Предпросмотр</button>
+                                    <button id="btn-copy-view-discord"    class="dc-copy-btn" style="font-size:11px;padding:5px 12px;background:#4e5058;">📋 Копировать</button>
+                                </div>
+                            </div>
+                            <!-- Переключатель предпросмотр/текст -->
+                            <div class="flex gap-2 shrink-0">
+                                <button id="dc-view-tab-preview" class="text-[10px] font-mono-custom px-3 py-1 border theme-border theme-text tab-active tracking-widest">ПРЕДПРОСМОТР</button>
+                                <button id="dc-view-tab-raw"     class="text-[10px] font-mono-custom px-3 py-1 border border-gray-700 text-gray-500 tab-inactive tracking-widest">ТЕКСТ</button>
+                            </div>
+                            <div id="dc-view-panel-preview" class="flex-1 overflow-y-auto rounded bg-[#1e1f22]" style="min-height:200px;">
+                                <div class="dc-wrap" id="char-view-discord-preview">
+                                    <div style="color:#72767d;font-size:13px;text-align:center;margin-top:30px;">[ НАЖМИТЕ «ПРЕДПРОСМОТР» ]</div>
+                                </div>
+                            </div>
+                            <div id="dc-view-panel-raw" class="hidden flex-col gap-2">
+                                <textarea id="char-view-discord-raw" readonly class="w-full min-h-[200px] bg-[#1e1f22] border border-gray-700 text-[11px] text-gray-300 p-3 resize-none custom-scrollbar font-mono" placeholder="[ НАЖМИТЕ «ПРЕДПРОСМОТР» ]"></textarea>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -236,6 +265,7 @@
                 <button class="char-sub-tab-btn tab-inactive px-4 py-3 border-r theme-border tracking-widest uppercase shrink-0" data-target="char-tab-content-inventory">[ 04 // ИНВЕНТАРЬ ]</button>
                 <button class="char-sub-tab-btn tab-inactive px-4 py-3 border-r theme-border tracking-widest uppercase shrink-0" data-target="char-tab-content-preview">[ 05 // ПРЕДПРОСМОТР ]</button>
                 <button class="char-sub-tab-btn tab-inactive px-4 py-3 tracking-widest uppercase shrink-0" data-target="char-tab-content-transmit">[ 06 // ПЕРЕДАЧА ]</button>
+                <button class="char-sub-tab-btn tab-inactive px-4 py-3 tracking-widest uppercase shrink-0" data-target="char-tab-content-discord">[ 07 // DISCORD ]</button>
             </div>
 
             <!-- === 01 ИНСТРУКЦИИ === -->
@@ -362,12 +392,89 @@
                     <label class="text-[10px] theme-text block mb-2">ДАННЫЕ_ЛИСТА_ПЕРСОНАЖА</label>
                     <textarea id="character-submit-output" readonly class="w-full flex-1 min-h-[200px] bg-[#050505] border border-gray-800 text-[10px] theme-text p-3 focus-theme resize-none custom-scrollbar break-all font-mono" placeholder="Ожидание генерации..."></textarea>
                     <button id="btn-copy-character-hash" class="border border-gray-700 text-gray-400 py-3 mt-4 text-xs font-bold tracking-widest hover:text-white hover:border-gray-500 transition-colors uppercase ui-element">[ КОПИРОВАТЬ В БУФЕР ОБМЕНА ]</button>
+                    <button id="btn-save-character-db" class="border border-green-900 text-green-700 py-3 mt-2 text-xs font-bold tracking-widest hover:text-green-400 hover:border-green-600 transition-colors uppercase ui-element">[ 💾 СОХРАНИТЬ НА УСТРОЙСТВО ]</button>
+                </div>
+            </div>
+
+            <!-- === 07 DISCORD === -->
+            <div id="char-tab-content-discord" class="hidden flex-col gap-0" style="max-height:70vh;">
+                <div class="flex items-center justify-between p-4 border-b border-gray-800">
+                    <span class="theme-text font-bold uppercase text-sm tracking-widest">> ЭКСПОРТ В DISCORD</span>
+                    <button id="btn-generate-discord" class="dc-copy-btn">⚡ Сгенерировать</button>
+                </div>
+                <!-- Переключатель: Предпросмотр / Сырой текст -->
+                <div class="flex border-b border-gray-800 text-[10px] font-mono-custom shrink-0">
+                    <button id="dc-tab-preview" class="px-5 py-2 border-r border-gray-800 tab-active tracking-widest">ПРЕДПРОСМОТР</button>
+                    <button id="dc-tab-raw"     class="px-5 py-2 tracking-widest tab-inactive">ТЕКСТ</button>
+                </div>
+                <div class="flex-1 overflow-hidden flex flex-col">
+                    <!-- Discord предпросмотр -->
+                    <div id="dc-panel-preview" class="flex-1 overflow-y-auto p-4 bg-[#1e1f22]">
+                        <div class="dc-wrap h-full" id="char-export-form-preview">
+                            <div style="color:#72767d;font-size:13px;text-align:center;margin-top:40px;">[ НАЖМИТЕ «СГЕНЕРИРОВАТЬ» ДЛЯ ПРЕДПРОСМОТРА ]</div>
+                        </div>
+                    </div>
+                    <!-- Сырой текст -->
+                    <div id="dc-panel-raw" class="hidden flex-col flex-1 p-4 gap-3">
+                        <textarea id="char-export-form-raw" readonly class="flex-1 min-h-[220px] bg-[#1e1f22] border border-gray-700 text-[11px] text-gray-300 p-3 resize-none custom-scrollbar font-mono" placeholder="[ НАЖМИТЕ «СГЕНЕРИРОВАТЬ» ]"></textarea>
+                        <button id="btn-copy-discord" class="dc-copy-btn self-start">📋 Копировать текст</button>
+                    </div>
                 </div>
             </div>
 
             <!-- Подвал -->
             <div class="p-4 border-t theme-border">
                 <p class="text-red-500 text-[10px] font-bold tracking-widest uppercase">ВНИМАНИЕ: Данные временные. Скопируйте JSON и вставьте в <code>js/charactersData.js</code> в массив <code>characters</code>.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- МОДАЛКА ЛОКАЛЬНОГО ХРАНИЛИЩА                                 -->
+    <!-- ============================================================ -->
+    <div id="storage-modal" class="fixed inset-0 z-[50] hidden opacity-0 transition-opacity duration-300 flex items-start justify-center overflow-y-auto py-8 px-4">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeStorageModal()"></div>
+        <div id="storage-modal-box" class="modal-content relative w-full max-w-3xl z-10 bg-[#030503] border theme-border shadow-2xl opacity-100 my-auto">
+
+            <!-- Шапка -->
+            <div class="flex items-center justify-between p-5 border-b theme-border">
+                <div>
+                    <h2 class="text-lg font-bold theme-text uppercase tracking-widest font-mono-custom">ЛОКАЛЬНОЕ ХРАНИЛИЩЕ</h2>
+                    <p class="text-[10px] text-gray-600 font-mono-custom mt-0.5">IndexedDB · Данные хранятся в браузере на этом устройстве</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="text-[10px] font-mono-custom text-gray-600">ЗАПИСЕЙ: <span id="storage-count" class="theme-text">—</span></span>
+                    <button id="btn-close-storage" class="text-gray-500 hover:theme-text transition-colors font-mono-custom text-xl ui-element">[X]</button>
+                </div>
+            </div>
+
+            <!-- Вкладки -->
+            <div class="flex border-b theme-border text-[10px] font-mono-custom">
+                <button id="storage-tab-dossiers"   class="sub-tab-btn tab-active   px-6 py-3 border-r theme-border tracking-widest uppercase">[ ОПЕРАТИВНИКИ ]</button>
+                <button id="storage-tab-characters" class="sub-tab-btn tab-inactive px-6 py-3 tracking-widest uppercase">[ ПЕРСОНАЖИ ]</button>
+            </div>
+
+            <!-- Список записей -->
+            <div class="p-5 overflow-y-auto custom-scrollbar" style="max-height: 50vh;">
+                <div id="storage-records-list" class="space-y-2"></div>
+            </div>
+
+            <!-- Подвал: действия -->
+            <div class="p-5 border-t theme-border flex flex-wrap gap-3 items-center justify-between">
+                <div class="flex flex-wrap gap-2">
+                    <!-- Экспорт -->
+                    <button id="btn-storage-export" class="border theme-border theme-text px-4 py-2 text-[10px] font-mono-custom font-bold tracking-widest hover:theme-bg-faint transition-colors uppercase ui-element">
+                        📥 ЭКСПОРТ ВСЕГО (JSON)
+                    </button>
+                    <!-- Импорт -->
+                    <button id="btn-storage-import" class="border border-gray-700 text-gray-400 px-4 py-2 text-[10px] font-mono-custom font-bold tracking-widest hover:text-white hover:border-gray-500 transition-colors uppercase ui-element">
+                        📤 ИМПОРТ ИЗ ФАЙЛА
+                    </button>
+                    <input id="storage-import-input" type="file" accept=".json" class="hidden">
+                </div>
+                <button id="btn-storage-clear" class="border border-red-900 text-red-800 px-4 py-2 text-[10px] font-mono-custom font-bold tracking-widest hover:text-red-400 hover:border-red-600 transition-colors uppercase ui-element">
+                    🗑 ОЧИСТИТЬ РАЗДЕЛ
+                </button>
             </div>
         </div>
     </div>
@@ -652,6 +759,9 @@
                         <button id="btn-copy-hash" class="border border-gray-700 text-gray-400 py-3 mt-4 text-xs font-bold tracking-widest hover:text-white hover:border-gray-500 transition-colors uppercase ui-element">
                             [ КОПИРОВАТЬ В БУФЕР ОБМЕНА ]
                         </button>
+                        <button id="btn-save-dossier-db" class="border border-green-900 text-green-700 py-3 mt-2 text-xs font-bold tracking-widest hover:text-green-400 hover:border-green-600 transition-colors uppercase ui-element">
+                            [ 💾 СОХРАНИТЬ НА УСТРОЙСТВО ]
+                        </button>
                     </div>
                 </div>
 
@@ -681,10 +791,14 @@
     <script src="js/submit.js"></script>
     <script src="js/characters.js"></script>
     <script src="js/characterSubmit.js"></script>
+    <script src="js/charExport.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/storageUI.js"></script>
     <script src="js/main.js"></script>
     <script>
-        // Вкладки модалки просмотра персонажа
+        // ── Вкладки модалки просмотра персонажа ──
         document.addEventListener('DOMContentLoaded', () => {
+            // Вкладки просмотра
             document.querySelectorAll('[data-char-tab]').forEach(btn => {
                 btn.addEventListener('click', () => {
                     document.querySelectorAll('[data-char-tab]').forEach(b => {
@@ -697,6 +811,114 @@
                     playSound(sfx.click);
                 });
             });
+
+            // ── Discord экспорт из таба формы создания (07) ──
+            // Определяем текущий индекс символа при открытии экспорта
+            let _currentViewCharIndex = 0;
+            window._setCurrentViewCharIndex = i => { _currentViewCharIndex = i; };
+
+            // Переключатель Предпросмотр / Текст (форма)
+            const dcTabPreview = document.getElementById('dc-tab-preview');
+            const dcTabRaw     = document.getElementById('dc-tab-raw');
+            const dcPanelPreview = document.getElementById('dc-panel-preview');
+            const dcPanelRaw     = document.getElementById('dc-panel-raw');
+
+            function switchDcFormTab(mode) {
+                if (!dcTabPreview || !dcTabRaw) return;
+                if (mode === 'preview') {
+                    dcTabPreview.classList.replace('tab-inactive','tab-active');
+                    dcTabRaw.classList.replace('tab-active','tab-inactive');
+                    dcPanelPreview.classList.remove('hidden');
+                    dcPanelRaw.classList.add('hidden');
+                } else {
+                    dcTabRaw.classList.replace('tab-inactive','tab-active');
+                    dcTabPreview.classList.replace('tab-active','tab-inactive');
+                    dcPanelRaw.classList.remove('hidden');
+                    dcPanelPreview.classList.add('hidden');
+                }
+            }
+            if (dcTabPreview) dcTabPreview.addEventListener('click', () => switchDcFormTab('preview'));
+            if (dcTabRaw)     dcTabRaw.addEventListener('click',     () => switchDcFormTab('raw'));
+
+            // Кнопка Сгенерировать (форма)
+            const btnGenDiscord = document.getElementById('btn-generate-discord');
+            if (btnGenDiscord) {
+                btnGenDiscord.addEventListener('click', () => {
+                    playSound(sfx.click);
+                    updateCharacterExportPreview();
+                    addSystemLog('Discord-анкета сгенерирована');
+                });
+            }
+
+            // Кнопка Копировать (форма)
+            const btnCopyDiscord = document.getElementById('btn-copy-discord');
+            if (btnCopyDiscord) {
+                btnCopyDiscord.addEventListener('click', () => {
+                    const raw = document.getElementById('char-export-form-raw');
+                    if (!raw || !raw.value) return;
+                    navigator.clipboard.writeText(raw.value).then(() => {
+                        playSound(sfx.click);
+                        addSystemLog('Discord-анкета скопирована в буфер');
+                        const orig = btnCopyDiscord.innerText;
+                        btnCopyDiscord.innerText = '✓ Скопировано!';
+                        setTimeout(() => { btnCopyDiscord.innerText = orig; }, 2000);
+                    });
+                });
+            }
+
+            // ── Discord экспорт из модалки просмотра ──
+            const dcViewTabPrev  = document.getElementById('dc-view-tab-preview');
+            const dcViewTabRaw   = document.getElementById('dc-view-tab-raw');
+            const dcViewPanelPrev = document.getElementById('dc-view-panel-preview');
+            const dcViewPanelRaw  = document.getElementById('dc-view-panel-raw');
+
+            function switchDcViewTab(mode) {
+                if (!dcViewTabPrev) return;
+                if (mode === 'preview') {
+                    dcViewTabPrev.classList.replace('tab-inactive','tab-active');
+                    dcViewTabRaw.classList.replace('tab-active','tab-inactive');
+                    dcViewPanelPrev.classList.remove('hidden');
+                    dcViewPanelRaw.classList.add('hidden');
+                } else {
+                    dcViewTabRaw.classList.replace('tab-inactive','tab-active');
+                    dcViewTabPrev.classList.replace('tab-active','tab-inactive');
+                    dcViewPanelRaw.classList.remove('hidden');
+                    dcViewPanelPrev.classList.add('hidden');
+                }
+            }
+            if (dcViewTabPrev) dcViewTabPrev.addEventListener('click', () => switchDcViewTab('preview'));
+            if (dcViewTabRaw)  dcViewTabRaw.addEventListener('click',  () => switchDcViewTab('raw'));
+
+            // Кнопка Предпросмотр в модалке просмотра
+            const btnViewPreview = document.getElementById('btn-view-discord-preview');
+            if (btnViewPreview) {
+                btnViewPreview.addEventListener('click', () => {
+                    playSound(sfx.click);
+                    if (typeof characters === 'undefined' || !characters[_currentViewCharIndex]) return;
+                    const text = charToDiscord(characters[_currentViewCharIndex]);
+                    const prevEl = document.getElementById('char-view-discord-preview');
+                    const rawEl  = document.getElementById('char-view-discord-raw');
+                    if (prevEl) prevEl.innerHTML = renderDiscordPreview(text);
+                    if (rawEl)  rawEl.value = text;
+                    addSystemLog('Discord-предпросмотр обновлён');
+                });
+            }
+
+            // Кнопка Копировать в модалке просмотра
+            const btnCopyViewDiscord = document.getElementById('btn-copy-view-discord');
+            if (btnCopyViewDiscord) {
+                btnCopyViewDiscord.addEventListener('click', () => {
+                    if (typeof characters === 'undefined' || !characters[_currentViewCharIndex]) return;
+                    const text = charToDiscord(characters[_currentViewCharIndex]);
+                    navigator.clipboard.writeText(text).then(() => {
+                        playSound(sfx.click);
+                        addSystemLog('Discord-анкета скопирована');
+                        const orig = btnCopyViewDiscord.innerText;
+                        btnCopyViewDiscord.innerText = '✓ Скопировано!';
+                        setTimeout(() => { btnCopyViewDiscord.innerText = orig; }, 2000);
+                    });
+                });
+            }
         });
     </script>
 </body>

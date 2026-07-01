@@ -9,6 +9,7 @@ document.addEventListener('keydown', (e) => {
         const character_modal = document.getElementById('character-modal');
         const character_submit_modal = document.getElementById('character-submit-modal');
         const lightbox = document.getElementById('lightbox');
+        const storage_modal = document.getElementById('storage-modal');
 
         if(lightbox && !lightbox.classList.contains('hidden')) { closeLightbox(); return; }
         if(modal && !modal.classList.contains('hidden')) closeModal();
@@ -17,6 +18,7 @@ document.addEventListener('keydown', (e) => {
         if(submit_modal && !submit_modal.classList.contains('hidden')) { document.getElementById('btn-close-submit').click(); }
         if(character_modal && !character_modal.classList.contains('hidden')) { closeCharacterModal(); }
         if(character_submit_modal && !character_submit_modal.classList.contains('hidden')) { document.getElementById('btn-close-character-submit').click(); }
+        if(storage_modal && !storage_modal.classList.contains('hidden')) { closeStorageModal(); }
     }
 });
 
@@ -27,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try { setupSubmitControls(); } catch(e) {}
     try { setupViewToggle(); } catch(e) {}
     try { setupCharacterSubmitControls(); } catch(e) {}
+    try { setupStorageUI(); } catch(e) { console.error('storageUI init error:', e); }
     
     const searchInput = document.getElementById('search-input');
     const filterDistrict = document.getElementById('filter-district');
@@ -161,6 +164,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (typeof populateDistricts === 'function') populateDistricts();
+
+        // Загружаем сохранённые записи из IndexedDB
+        try {
+            const loaded = await loadAllFromDB();
+            if (loaded.dossiers > 0 || loaded.characters > 0) {
+                addSystemLog(`Хранилище: загружено ${loaded.dossiers} досье, ${loaded.characters} персонажей`);
+            }
+        } catch(e) { console.error('DB load on boot error:', e); }
 
         if(boot_text) {
             for (let line of lines) { 

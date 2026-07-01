@@ -2,6 +2,7 @@
 
 let encryption_timeout;
 let progress_interval;
+let _pendingDossier = null; // Последнее сгенерированное досье для сохранения в DB
 
 function getMoscowTime() {
     const d = new Date();
@@ -13,6 +14,27 @@ function getMoscowTime() {
     const hh = String(nd.getHours()).padStart(2, '0');
     const mins = String(nd.getMinutes()).padStart(2, '0');
     return `${yy}.${mm}.${dd} ${hh}:${mins}`;
+}
+
+function setupLocalImageUpload(fileInputId, targetInputId) {
+    const fileInput = document.getElementById(fileInputId);
+    const targetInput = document.getElementById(targetInputId);
+
+    if (!fileInput || !targetInput) return;
+
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            targetInput.value = event.target.result; // Вставляем Data URL в текстовое поле
+            if (typeof playSound !== 'undefined' && typeof sfx !== 'undefined') {
+                playSound(sfx.typing);
+            }
+        };
+        reader.readAsDataURL(file);
+    });
 }
 
 function updateLivePreview() {
@@ -70,6 +92,44 @@ function updateLivePreview() {
         </div>
         <div>${reportsHtml}</div>
     `;
+}
+
+function loadDossierToForm(data) {
+    document.getElementById('sub-id').value = data.id || '';
+    document.getElementById('sub-name').value = data.name || '';
+    document.getElementById('sub-age').value = data.age || '';
+    document.getElementById('sub-district').value = data.district || '';
+    document.getElementById('sub-aff').value = data.affiliation || '';
+    document.getElementById('sub-grade').value = data.grade || '';
+    document.getElementById('sub-status').value = data.status || '';
+
+    if (document.getElementById('sub-photo')) {
+        document.getElementById('sub-photo').value = data.photo || '';
+    }
+
+    if (document.getElementById('sub-tags')) {
+        document.getElementById('sub-tags').value = (data.tags || []).join(', ');
+    }
+
+    const container = document.getElementById('reports-container');
+    if (container) {
+        container.innerHTML = '';
+        if (data.reports && data.reports.length > 0) {
+            data.reports.forEach(rep => {
+                addReportSection();
+                const lastEntry = container.lastElementChild;
+                lastEntry.querySelector('.report-title').value = rep.title || '';
+                lastEntry.querySelector('.report-audio').value = rep.audio || '';
+                lastEntry.querySelector('.report-content').value = rep.content || '';
+            });
+        } else {
+            addReportSection();
+        }
+    }
+
+    // Имитируем клик по кнопке открытия терминала досье
+    const openBtn = document.getElementById('btn-open-submit');
+    if (openBtn) openBtn.click();
 }
 
 function addReportSection() {
@@ -289,6 +349,7 @@ function setupSubmitControls() {
 
             const json_str = JSON.stringify(dossier_data, null, 4); 
             pending_hash = json_str + ",\n";
+            _pendingDossier = dossier_data;
             
             if(output_hash) output_hash.value = "";
             if(enc_overlay) {
@@ -337,6 +398,32 @@ function setupSubmitControls() {
                 btn_copy.innerText = "[ СКОПИРОВАНО ]";
                 setTimeout(() => { btn_copy.innerText = original_text; }, 2000);
             });
+        });
+    }
+
+    const btn_save_db = document.getElementById('btn-save-dossier-db');
+    if (btn_save_db) {
+        btn_save_db.addEventListener('click', async () => {
+            if (!_pendingDossier) { addSystemLog('Сначала сгенерируйте досье', true); return; }
+            try {
+                await dbSave(STORE_DOS, _pendingDossier);
+                // Добавляем/обновляем в памяти
+                const idx = dossiers.findIndex(d => d.id === _pendingDossier.id);
+                const saved = { ..._pendingDossier, _fromDB: true };
+                if (idx !== -1) dossiers[idx] = saved; else dossiers.push(saved);
+                renderCards();
+                playSound(sfx.docOpen);
+                addSystemLog(`Досье ${_pendingDossier.id} сохранено в хранилище`);
+                const orig = btn_save_db.innerText;
+                btn_save_db.innerText = '[ ✓ СОХРАНЕНО ]';
+                btn_save_db.classList.add('text-green-400', 'border-green-800');
+                setTimeout(() => {
+                    btn_save_db.innerText = orig;
+                    btn_save_db.classList.remove('text-green-400', 'border-green-800');
+                }, 2500);
+            } catch (err) {
+                addSystemLog('Ошибка сохранения: ' + err.message, true);
+            }
         });
     }
 }

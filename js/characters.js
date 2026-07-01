@@ -106,8 +106,9 @@ function renderCharacterCards() {
         });
 
         const classLine = [char.race, char.charClass, char.subclass].filter(Boolean).join(' // ');
+        const charDBIcon = char._fromDB ? `<span class="text-green-700 text-[10px]" title="Сохранено локально">💾</span>` : '';
 
-        card.innerHTML = `<div class="flex gap-4 mb-4 relative z-10"><img src="${char.photo || ''}" class="w-16 h-16 object-cover border theme-border grayscale"><div class="flex-1 min-w-0"><div class="text-[10px] font-mono-custom theme-text opacity-50 mb-1 glitch-text" data-val="${char.id || ''}">${char.id || ''}</div><h3 class="font-bold text-gray-100 uppercase truncate text-sm glitch-text" data-val="${char.name || ''}">${char.name || ''}</h3><div class="text-xs theme-text opacity-70 truncate font-mono-custom glitch-text" data-val="${classLine}">${classLine}</div></div></div><div class="mt-auto relative z-10 space-y-2"><div class="flex justify-between text-[10px] font-mono-custom theme-text opacity-70 border-t theme-border pt-2"><span>Возраст: ${char.age ?? '—'}</span><span>${char.height || ''}</span></div></div>`;
+        card.innerHTML = `<div class="flex gap-4 mb-4 relative z-10"><img src="${char.photo || ''}" class="w-16 h-16 object-cover border theme-border grayscale"><div class="flex-1 min-w-0"><div class="text-[10px] font-mono-custom theme-text opacity-50 mb-1 glitch-text flex justify-between items-center" data-val="${char.id || ''}"><span>${char.id || ''}</span>${charDBIcon}</div><h3 class="font-bold text-gray-100 uppercase truncate text-sm glitch-text" data-val="${char.name || ''}">${char.name || ''}</h3><div class="text-xs theme-text opacity-70 truncate font-mono-custom glitch-text" data-val="${classLine}">${classLine}</div></div></div><div class="mt-auto relative z-10 space-y-2"><div class="flex justify-between text-[10px] font-mono-custom theme-text opacity-70 border-t theme-border pt-2"><span>Возраст: ${char.age ?? '—'}</span><span>${char.height || ''}</span></div></div>`;
         grid.appendChild(card);
     });
 }
@@ -140,6 +141,13 @@ function openCharacterModal(index) {
     const modalBox = document.getElementById('character-modal-box');
     modal.classList.remove('hidden');
     addSystemLog(`Открытие листа персонажа ${char.id || ''}`);
+    if (typeof window._setCurrentViewCharIndex === 'function') window._setCurrentViewCharIndex(index);
+
+    // Сбрасываем Discord-панель при открытии нового персонажа
+    const prevEl = document.getElementById('char-view-discord-preview');
+    const rawEl  = document.getElementById('char-view-discord-raw');
+    if (prevEl) prevEl.innerHTML = '<div style="color:#72767d;font-size:13px;text-align:center;margin-top:30px;">[ НАЖМИТЕ «ПРЕДПРОСМОТР» ]</div>';
+    if (rawEl)  rawEl.value = '';
 
     setTimeout(() => {
         modal.classList.remove('opacity-0');

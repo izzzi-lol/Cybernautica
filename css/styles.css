@@ -258,3 +258,72 @@ body:has(#submit-modal:not(.hidden)) {
     aside.hidden-mobile { display: none !important; }
     aside.visible-mobile { display: flex !important; }
 }
+
+/* ============================================================
+   DISCORD PREVIEW
+   ============================================================ */
+.dc-wrap {
+    background: #313338;
+    color: #dbdee1;
+    font-family: 'gg sans', 'Noto Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.375;
+    padding: 16px 20px;
+    border-radius: 4px;
+    overflow-y: auto;
+}
+.dc-h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #f2f3f5;
+    margin: 8px 0 4px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 6px;
+}
+.dc-h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #f2f3f5;
+    margin: 16px 0 4px;
+}
+.dc-blockquote {
+    border-left: 4px solid #4e5058;
+    padding: 2px 0 2px 12px;
+    color: #b5bac1;
+    margin: 2px 0;
+}
+.dc-li { margin: 1px 0; display: flex; align-items: flex-start; gap: 6px; }
+.dc-li::before { content: '•'; color: #b5bac1; flex-shrink: 0; margin-top: 1px; }
+.dc-li--1 { padding-left: 0; }
+.dc-li--2 { padding-left: 20px; }
+.dc-li--3 { padding-left: 40px; }
+.dc-li--2::before, .dc-li--3::before { content: '◦'; }
+.dc-spacer { height: 6px; }
+.dc-text { margin: 2px 0; }
+.dc-code {
+    background: rgba(30,31,34,0.85);
+    color: #dde2e8;
+    padding: 0 4px;
+    border-radius: 3px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 85%;
+}
+.dc-wrap strong { color: #f2f3f5; font-weight: 600; }
+.dc-wrap em { color: #c9cdd2; font-style: italic; }
+.dc-wrap a { color: #00a8fc; text-decoration: none; }
+
+/* Кнопка копирования */
+.dc-copy-btn {
+    background: #5865f2;
+    color: #fff;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    letter-spacing: 0.03em;
+}
+.dc-copy-btn:hover { background: #4752c4; }
+.dc-copy-btn:active { background: #3c45a5; }

@@ -1,5 +1,7 @@
 // --- CYBERNAUTICA CHARACTER SHEET SUBMISSION MODULE ---
 
+let _pendingCharacter = null; // Последний сгенерированный персонаж для сохранения в DB
+
 function getMoscowTimeChar() {
     return typeof getMoscowTime === 'function' ? getMoscowTime() : new Date().toISOString();
 }
@@ -143,6 +145,92 @@ function collectAppearancePhotosFromDOM() {
     return photos;
 }
 
+function loadCharacterToForm(data) {
+    // 1. Заполняем простые поля
+    const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.value = val || '';
+    };
+
+    setVal('char-id', data.id);
+    setVal('char-name', data.name);
+    setVal('char-race', data.race);
+    setVal('char-class', data.charClass);
+    setVal('char-subclass', data.subclass);
+    setVal('char-age', data.age);
+    setVal('char-height', data.height);
+    setVal('char-photo', data.photo);
+    setVal('char-personality', data.personality);
+    setVal('char-history', data.history);
+    setVal('char-weaknesses', data.weaknesses);
+    setVal('char-appearance', data.appearance);
+
+    // 2. Способности и под-способности
+    const abContainer = document.getElementById('char-abilities-container');
+    if (abContainer) {
+        abContainer.innerHTML = '';
+        if (data.abilities && data.abilities.length > 0) {
+            data.abilities.forEach(ab => {
+                addAbilityBlock();
+                const abEl = abContainer.lastElementChild;
+
+                abEl.querySelector('.char-ability-name').value = ab.name || '';
+                abEl.querySelector('.char-ability-desc').value = ab.description || '';
+                // Теги способностей объединяем переносом строки
+                abEl.querySelector('.char-ability-tags').value = (ab.tags || []).join('\n');
+
+                const subContainer = abEl.querySelector('.char-subability-list');
+                if (ab.subAbilities && ab.subAbilities.length > 0) {
+                    ab.subAbilities.forEach(sub => {
+                        addSubAbilityBlock(subContainer);
+                        const subEl = subContainer.lastElementChild;
+
+                        subEl.querySelector('.char-subability-name').value = sub.name || '';
+                        subEl.querySelector('.char-subability-desc').value = sub.description || '';
+                        subEl.querySelector('.char-subability-tags').value = (sub.tags || []).join('\n');
+                    });
+                }
+            });
+        } else {
+            addAbilityBlock(); // Оставляем один пустой блок, если способностей нет
+        }
+    }
+
+    // 3. Инвентарь
+    const invContainer = document.getElementById('char-inventory-container');
+    if (invContainer) {
+        invContainer.innerHTML = '';
+        if (data.inventory && data.inventory.length > 0) {
+            data.inventory.forEach(item => {
+                addInventoryItem();
+                const itemEl = invContainer.lastElementChild;
+                itemEl.querySelector('.char-inventory-name').value = item.name || '';
+                itemEl.querySelector('.char-inventory-desc').value = item.description || '';
+                itemEl.querySelector('.char-inventory-photo').value = item.photo || '';
+            });
+        } else {
+            addInventoryItem();
+        }
+    }
+
+    // 4. Галерея внешности
+    const photoContainer = document.getElementById('char-appearance-photos-container');
+    if (photoContainer) {
+        photoContainer.innerHTML = '';
+        if (data.appearance_photos && data.appearance_photos.length > 0) {
+            data.appearance_photos.forEach(url => {
+                addAppearancePhoto();
+                const photoEl = photoContainer.lastElementChild;
+                photoEl.querySelector('.char-appearance-photo-url').value = url || '';
+            });
+        }
+    }
+
+    // 5. Имитируем клик по кнопке для открытия терминала
+    const openBtn = document.getElementById('btn-open-character-submit');
+    if (openBtn) openBtn.click();
+}
+
 function buildCharacterData() {
     const get = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
 
@@ -232,7 +320,7 @@ function setupCharacterSubmitControls() {
             playSound(sfx.click);
             tabBtns.forEach(b => { b.classList.remove('tab-active'); b.classList.add('tab-inactive'); });
 
-            const targets = ['char-tab-content-guide', 'char-tab-content-basic', 'char-tab-content-abilities', 'char-tab-content-inventory', 'char-tab-content-preview', 'char-tab-content-transmit'];
+            const targets = ['char-tab-content-guide', 'char-tab-content-basic', 'char-tab-content-abilities', 'char-tab-content-inventory', 'char-tab-content-preview', 'char-tab-content-transmit', 'char-tab-content-discord'];
             targets.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) { el.classList.add('hidden'); el.classList.remove('flex', 'flex-col'); }
@@ -284,6 +372,7 @@ function setupCharacterSubmitControls() {
             playSound(sfx.click);
             playSound(sfx.typing);
             const data = buildCharacterData();
+            _pendingCharacter = data;
             const json_str = JSON.stringify(data, null, 4);
             if (output_hash) output_hash.value = json_str + ",\n";
             addSystemLog('Лист персонажа успешно скомпилирован.');
@@ -300,6 +389,31 @@ function setupCharacterSubmitControls() {
                 btn_copy.innerText = "[ СКОПИРОВАНО ]";
                 setTimeout(() => { btn_copy.innerText = original_text; }, 2000);
             });
+        });
+    }
+
+    const btn_save_char_db = document.getElementById('btn-save-character-db');
+    if (btn_save_char_db) {
+        btn_save_char_db.addEventListener('click', async () => {
+            if (!_pendingCharacter) { addSystemLog('Сначала сгенерируйте лист персонажа', true); return; }
+            try {
+                await dbSave(STORE_CHAR, _pendingCharacter);
+                const idx = characters.findIndex(c => c.id === _pendingCharacter.id);
+                const saved = { ..._pendingCharacter, _fromDB: true };
+                if (idx !== -1) characters[idx] = saved; else characters.push(saved);
+                renderCharacterCards();
+                playSound(sfx.docOpen);
+                addSystemLog(`Персонаж ${_pendingCharacter.id} сохранён в хранилище`);
+                const orig = btn_save_char_db.innerText;
+                btn_save_char_db.innerText = '[ ✓ СОХРАНЕНО ]';
+                btn_save_char_db.classList.add('text-green-400', 'border-green-800');
+                setTimeout(() => {
+                    btn_save_char_db.innerText = orig;
+                    btn_save_char_db.classList.remove('text-green-400', 'border-green-800');
+                }, 2500);
+            } catch (err) {
+                addSystemLog('Ошибка сохранения: ' + err.message, true);
+            }
         });
     }
 }
